@@ -3,7 +3,7 @@ use ruint::Uint;
 // TODO maybe replace with crypto?
 use sha2::{Digest, Sha256};
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct NullifierLeaf {
     leaf: Option<IndexedTreeLeaf>,
 }
@@ -13,11 +13,24 @@ impl NullifierLeaf {
         Self { leaf }
     }
 
+    pub fn new_leaf(value: Uint<256, 4>, next_index: usize, next_value: Uint<256, 4>) -> Self {
+        Self {
+            leaf: Some(IndexedTreeLeaf::new(value, next_index, next_value)),
+        }
+    }
+
     pub fn empty() -> Self {
         Self { leaf: None }
     }
 
-    pub fn inner_ref(self) -> IndexedTreeLeaf {
+    // TODO: naming is awful
+    pub fn zero() -> Self {
+        Self {
+            leaf: Some(IndexedTreeLeaf::empty()),
+        }
+    }
+
+    pub fn inner(self) -> IndexedTreeLeaf {
         match self.leaf {
             Some(l) => l,
             None => IndexedTreeLeaf::empty(),
