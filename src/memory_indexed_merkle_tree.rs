@@ -16,6 +16,7 @@ pub struct MemoryIndexedMerkleTree {
 
 // Note this builds and stores the whole tree in memory, useful for testing with small trees, but will not scale
 impl MemoryIndexedMerkleTree {
+    #[allow(clippy::uninit_vec)]
     pub fn new(depth: u64) -> Self {
         // Limit tree size as it is in memory
         assert!(depth <= 32);
