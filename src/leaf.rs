@@ -83,7 +83,7 @@ impl IndexedTreeLeaf {
     }
 
     pub fn is_zero(&self) -> bool {
-        self.value == Uint::ZERO
+        self.value == Uint::ZERO && self.next_value == Uint::ZERO && self.next_index == 0
     }
 
     pub fn hash_leaf(&self) -> Uint<256, 4> {

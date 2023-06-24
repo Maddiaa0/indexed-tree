@@ -11,7 +11,7 @@ pub struct MemoryIndexedMerkleTree {
     pub root: Uint<256, 4>,
 
     pub leaves: Vec<NullifierLeaf>,
-    hashes: Vec<Uint<256, 4>>,
+    pub hashes: Vec<Uint<256, 4>>,
 }
 
 // Note this builds and stores the whole tree in memory, useful for testing with small trees, but will not scale
@@ -37,7 +37,7 @@ impl MemoryIndexedMerkleTree {
         let mut current = NullifierLeaf::empty().hash();
         let mut offset: usize = 0;
         let mut layer_size = total_size;
-        while offset < total_size {
+        while offset < num_nodes {
             for i in 0..layer_size {
                 hashes[offset + i] = current;
             }
@@ -77,7 +77,7 @@ impl MemoryIndexedMerkleTree {
 
         let mut current = leaf.hash();
 
-        for i in 0..self.depth {
+        for _ in 0..self.depth {
             self.hashes[(offset + idx) as usize] = current;
             idx &= !0u64 - 1;
             current = hash_pair(
@@ -88,6 +88,7 @@ impl MemoryIndexedMerkleTree {
             layer_size >>= 1;
             idx >>= 1;
         }
+
         self.root = current;
         self.root
     }
@@ -111,17 +112,19 @@ impl MemoryIndexedMerkleTree {
         // Update the current leaf to point at the new leaf
         current_leaf.next_index = self.leaves.len();
         current_leaf.next_value = value;
-        self.leaves[closest_leaf_index] = NullifierLeaf::new(Some(current_leaf));
+
+        let updated_leaf = NullifierLeaf::new(Some(current_leaf.clone()));
+        self.leaves[closest_leaf_index] = updated_leaf.clone();
 
         // Insert new leaf
         self.leaves.push(new_leaf.clone());
 
         // Update the old leaf in the tree
-        self.update_element(closest_leaf_index as u64, &wrapped_current_leaf);
+        self.update_element(closest_leaf_index as u64, &updated_leaf);
 
         // Insert new leaf
-        let root = self.update_element((self.leaves.len() - 1) as u64, &new_leaf);
-        root
+
+        self.update_element((self.leaves.len() - 1) as u64, &new_leaf)
     }
 
     // TODO: less yuck
@@ -131,13 +134,13 @@ impl MemoryIndexedMerkleTree {
         let mut idx = index;
         let mut offset = 0;
         let mut layer_size = self.total_size;
-        for i in 0..self.depth {
+        for _ in 0..self.depth {
             idx -= idx & 1;
 
-            path[i as usize] = [
+            path.push([
                 self.hashes[(offset + idx) as usize],
                 self.hashes[(offset + idx + 1) as usize],
-            ];
+            ]);
 
             offset += layer_size;
             layer_size >>= 1;
